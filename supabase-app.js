@@ -8,6 +8,7 @@
   let signupMode = false;
   let activeConversation = null;
   let realtimeChannel = null;
+  let inboxRealtimeChannel = null;
   let choosingListingLocation = false;
   const unreadConversations = new Set();
   const unreadDot = () => byId("inboxUnreadDot");
@@ -23,6 +24,25 @@
   function markRead(conversationId) {
     unreadConversations.delete(conversationId);
     updateUnreadDot();
+  }
+  function subscribeInboxNotifications() {
+    if (inboxRealtimeChannel) client.removeChannel(inboxRealtimeChannel);
+    if (!session?.user) { inboxRealtimeChannel = null; return; }
+    inboxRealtimeChannel = client.channel("inbox-notifications-" + session.user.id)
+      .on("postgres_changes", {event:"INSERT",schema:"public",table:"messages"},
+        async payload => {
+          const message = payload.new;
+          if (message.sender_id === session?.user?.id) return;
+          const {data: conversation, error} = await client.from("conversations")
+            .select("id,buyer_id,owner_id").eq("id", message.conversation_id).maybeSingle();
+          if (error || !conversation ||
+              (conversation.buyer_id !== session?.user?.id && conversation.owner_id !== session?.user?.id)) return;
+          if (activeConversation?.id === conversation.id && !byId("chatModal").hidden) {
+            loadMessages(conversation.id);
+          } else {
+            markUnread(conversation.id);
+          }
+        }).subscribe();
   }
 
   const say = message => typeof showToast === "function" ? showToast(message) : alert(message);
@@ -413,11 +433,13 @@
     if (error) console.error(error);
     session = data?.session || null;
     updateAccountUI();
+    subscribeInboxNotifications();
     await refreshListings();
   });
   client.auth.onAuthStateChange((_event, nextSession) => {
     session = nextSession;
     updateAccountUI();
+    subscribeInboxNotifications();
     if (session) refreshListings();
   });
 })();
