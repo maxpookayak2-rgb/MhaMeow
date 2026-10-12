@@ -48,7 +48,12 @@ create or replace function public.protect_profile_admin_flag()
 returns trigger language plpgsql security definer set search_path = ''
 as $$
 begin
-  if new.is_admin is distinct from old.is_admin and not public.is_admin() then
+  -- SQL Editor runs without an authenticated app user (auth.uid() is null),
+  -- so allow trusted database-admin operations there to bootstrap the first admin.
+  -- Authenticated website users still cannot grant themselves admin privileges.
+  if new.is_admin is distinct from old.is_admin
+     and (select auth.uid()) is not null
+     and not public.is_admin() then
     raise exception 'Only an admin can change admin privileges';
   end if;
   return new;
