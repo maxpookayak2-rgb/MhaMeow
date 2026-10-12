@@ -207,6 +207,25 @@
     openModal();
   }, true);
 
+  // Local image preview for listing form.
+  byId("listingImageFile").addEventListener("change", () => {
+    const file = byId("listingImageFile").files?.[0];
+    const preview = byId("listingImagePreview");
+    if (!file) { preview.hidden = true; byId("listingImagePreviewImg").removeAttribute("src"); return; }
+    if (!["image/jpeg","image/png","image/webp","image/gif"].includes(file.type) || file.size > 5 * 1024 * 1024) {
+      byId("listingImageFile").value = "";
+      preview.hidden = true;
+      return say("กรุณาเลือกรูป JPG, PNG, WEBP หรือ GIF ขนาดไม่เกิน 5 MB");
+    }
+    byId("listingImagePreviewImg").src = URL.createObjectURL(file);
+    preview.hidden = false;
+  });
+  byId("removeListingImage").addEventListener("click", () => {
+    byId("listingImageFile").value = "";
+    byId("listingImagePreviewImg").removeAttribute("src");
+    byId("listingImagePreview").hidden = true;
+  });
+
   byId("postForm").addEventListener("submit", async event => {
     event.preventDefault(); event.stopImmediatePropagation();
     if (!session?.user) { openAuth(); setAuthMessage("เข้าสู่ระบบก่อน จึงจะลงประกาศได้"); return; }
@@ -215,6 +234,12 @@
     const province = String(form.get("province") || "").trim();
     const description = String(form.get("description") || "").trim();
     if (!title || !province || !description) return say("กรุณากรอกข้อมูลให้ครบ");
+    const imageFile = form.get("imageFile");
+    if (imageFile instanceof File && imageFile.size > 0) {
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+      if (!allowedTypes.includes(imageFile.type)) return say("กรุณาเลือกรูป JPG, PNG, WEBP หรือ GIF");
+      if (imageFile.size > 5 * 1024 * 1024) return say("รูปต้องมีขนาดไม่เกิน 5 MB");
+    }
     const payload = {
       owner_id: session.user.id, title, animal_type: String(form.get("type")),
       province, description, image_url: String(form.get("image") || "").trim() || null,
@@ -224,9 +249,33 @@
     };
     const submit = event.currentTarget.querySelector('[type="submit"]');
     submit.disabled = true;
-    const { data, error } = await client.from("listings").insert(payload).select("*").single();
-    submit.disabled = false;
-    if (error) { console.error(error); say("บันทึกประกาศไม่สำเร็จ: " + error.message); return; }
+    try {
+      if (imageFile instanceof File && imageFile.size > 0) {
+        say("กำลังอัปโหลดรูปภาพ...");
+        const extension = ({ "image/jpeg":"jpg", "image/png":"png", "image/webp":"webp", "image/gif":"gif" })[imageFile.type];
+        const storagePath = session.user.id + "/" + Date.now() + "-" + Math.random().toString(36).slice(2, 10) + "." + extension;
+        const { error: uploadError } = await client.storage.from("listing-images").upload(storagePath, imageFile, {
+          cacheControl: "3600", upsert: false, contentType: imageFile.type
+        });
+        if (uploadError) throw new Error("อัปโหลดรูปไม่สำเร็จ: " + uploadError.message + " (ตรวจสอบว่ารัน supabase-storage-migration.sql แล้ว)");
+        const { data: publicData } = client.storage.from("listing-images").getPublicUrl(storagePath);
+        payload.image_url = publicData.publicUrl;
+      }
+      const { data, error } = await client.from("listings").insert(payload).select("*").single();
+      if (error) throw new Error("บันทึกประกาศไม่สำเร็จ: " + error.message);
+      closeModal();
+      await refreshListings();
+      const saved = toAnimal(data);
+      selectedId = saved.id;
+      if (map && Number.isFinite(saved.lat) && Number.isFinite(saved.lng)) map.setView([saved.lat,saved.lng],13);
+      say(saved.lat != null && saved.lng != null ? "ส่งประกาศพร้อมตำแหน่งบนแผนที่เพื่อรอตรวจสอบแล้ว" : "ส่งประกาศเพื่อรอแอดมินตรวจสอบแล้ว");
+      byId("explore").scrollIntoView({behavior:"smooth"});
+    } catch (error) {
+      console.error(error);
+      say(error.message || "บันทึกประกาศไม่สำเร็จ");
+    } finally {
+      submit.disabled = false;
+    }
     closeModal();
     await refreshListings();
     const saved = toAnimal(data);
