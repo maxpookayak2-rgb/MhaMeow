@@ -5,6 +5,7 @@
     !cfg.url.includes("ใส่_") && !cfg.anonKey.includes("ใส่_");
   let client = null;
   let session = null;
+  let isAdmin = false;
   let signupMode = false;
   let activeConversation = null;
   let realtimeChannel = null;
@@ -104,7 +105,17 @@
     sex: row.sex || "ยังไม่ได้ระบุ", health: row.health || "ยังไม่ได้ระบุ",
     lat: row.latitude ?? undefined, lng: row.longitude ?? undefined, status: row.status, image: row.image_url || "", adoption_buyer_confirmed: !!row.adoption_buyer_confirmed, adoption_owner_confirmed: !!row.adoption_owner_confirmed
   });
+  async function refreshAdminRole() {
+    isAdmin = false;
+    if (session?.user) {
+      const { data, error } = await client.from("profiles").select("is_admin").eq("id", session.user.id).maybeSingle();
+      if (error) console.warn("Could not load admin role:", error.message);
+      isAdmin = !!data?.is_admin;
+    }
+    byId("adminOpenBtn").hidden = !isAdmin;
+  }
   async function refreshListings() {
+    await refreshAdminRole();
     const { data, error } = await client.from("listings").select("*").order("created_at", { ascending: false });
     if (error) { console.error(error); say("โหลดประกาศออนไลน์ไม่สำเร็จ ตรวจสอบตาราง listings และ RLS"); return; }
     animals = [...sampleAnimals.map(a => ({...a, demo: true})), ...(data || []).map(toAnimal)];
@@ -117,6 +128,7 @@
     byId("inboxBtn").hidden = !signedIn;
     byId("userLabel").hidden = !signedIn;
     byId("userLabel").textContent = signedIn ? (session.user.user_metadata?.display_name || session.user.email) : "";
+    byId("adminOpenBtn").hidden = !isAdmin;
   }
   function openAuth() {
     byId("authModal").hidden = false;
@@ -447,6 +459,56 @@
       });
     });
   }
+  // Admin review: only accounts whose public.profiles.is_admin is true see this panel.
+  async function openAdminPanel() {
+    if (!session?.user || !isAdmin) return say("หน้านี้สำหรับผู้ดูแลระบบเท่านั้น");
+    byId("adminModal").hidden = false;
+    byId("adminListingList").innerHTML = '<p class="empty-state">กำลังโหลดประกาศที่รอตรวจสอบ...</p>';
+    const { data, error } = await client.from("listings").select("*")
+      .eq("approval_status", "pending").order("created_at", {ascending:false});
+    if (error) {
+      console.error(error);
+      byId("adminListingList").innerHTML = '<p class="empty-state">โหลดประกาศไม่ได้: ' + escapeHtml(error.message) + '</p>';
+      return;
+    }
+    if (!data?.length) {
+      byId("adminListingList").innerHTML = '<p class="empty-state">🎉 ไม่มีประกาศที่รออนุมัติในขณะนี้</p>';
+      return;
+    }
+    byId("adminListingList").innerHTML = data.map(row => {
+      const animal = toAnimal(row);
+      return '<article class="admin-listing"><div class="admin-listing-main">' +
+        (animal.image ? '<img src="' + escapeHtml(animal.image) + '" alt="รูป ' + escapeHtml(animal.title) + '">' : '<div class="admin-no-image">🐾</div>') +
+        '<div><strong>' + escapeHtml(animal.title) + '</strong><span>' + escapeHtml(animal.type === "dog" ? "สุนัข" : "แมว") + ' · ' + escapeHtml(animal.province) + '</span>' +
+        '<p>' + escapeHtml(animal.description) + '</p><small>อายุ: ' + escapeHtml(animal.age) + ' · เพศ: ' + escapeHtml(animal.sex) + '</small></div></div>' +
+        '<div class="admin-listing-actions"><button type="button" class="primary small" data-admin-action="approved" data-listing-id="' + escapeHtml(row.id) + '">✓ อนุมัติ</button>' +
+        '<button type="button" class="secondary small admin-reject" data-admin-action="rejected" data-listing-id="' + escapeHtml(row.id) + '">ปฏิเสธ</button></div></article>';
+    }).join("");
+    byId("adminListingList").querySelectorAll("[data-admin-action]").forEach(button => {
+      button.addEventListener("click", async () => {
+        if (!isAdmin || !session?.user) return say("ไม่มีสิทธิ์ดำเนินการ");
+        const nextStatus = button.dataset.adminAction;
+        const listingId = button.dataset.listingId;
+        const confirmText = nextStatus === "approved" ? "อนุมัติประกาศนี้ให้แสดงบนเว็บไซต์ใช่ไหม?" : "ปฏิเสธประกาศนี้ใช่ไหม? ประกาศจะไม่แสดงต่อสาธารณะ";
+        if (!confirm(confirmText)) return;
+        button.disabled = true;
+        const { error: updateError } = await client.from("listings")
+          .update({approval_status: nextStatus}).eq("id", listingId);
+        if (updateError) {
+          console.error(updateError);
+          button.disabled = false;
+          return say("อัปเดตสถานะไม่สำเร็จ: " + updateError.message);
+        }
+        say(nextStatus === "approved" ? "อนุมัติประกาศแล้ว" : "ปฏิเสธประกาศแล้ว");
+        await refreshListings();
+        await openAdminPanel();
+      });
+    });
+  }
+  byId("adminOpenBtn").addEventListener("click", openAdminPanel);
+  byId("closeAdmin").addEventListener("click", () => byId("adminModal").hidden = true);
+  byId("adminModal").addEventListener("click", event => { if (event.target === byId("adminModal")) byId("adminModal").hidden = true; });
+
   byId("inboxBtn").addEventListener("click", openInbox);
   byId("closeInbox").addEventListener("click", () => byId("inboxModal").hidden = true);
   byId("inboxModal").addEventListener("click", event => { if (event.target === byId("inboxModal")) byId("inboxModal").hidden = true; });
