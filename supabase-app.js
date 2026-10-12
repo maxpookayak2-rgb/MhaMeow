@@ -9,6 +9,21 @@
   let activeConversation = null;
   let realtimeChannel = null;
   let choosingListingLocation = false;
+  const unreadConversations = new Set();
+  const unreadDot = () => byId("inboxUnreadDot");
+  function updateUnreadDot() {
+    const dot = unreadDot();
+    if (dot) dot.hidden = unreadConversations.size === 0;
+  }
+  function markUnread(conversationId) {
+    if (!conversationId || activeConversation?.id === conversationId) return;
+    unreadConversations.add(conversationId);
+    updateUnreadDot();
+  }
+  function markRead(conversationId) {
+    unreadConversations.delete(conversationId);
+    updateUnreadDot();
+  }
 
   const say = message => typeof showToast === "function" ? showToast(message) : alert(message);
   const byId = id => document.getElementById(id);
@@ -278,7 +293,13 @@
       .on("postgres_changes", {event:"INSERT",schema:"public",table:"messages",filter:"conversation_id=eq."+conversationId},
         payload => {
           const m = payload.new;
-          if (m.sender_id !== session?.user?.id) loadMessages(conversationId);
+          if (m.sender_id !== session?.user?.id) {
+            if (activeConversation?.id === conversationId && !byId("chatModal").hidden) {
+              loadMessages(conversationId);
+            } else {
+              markUnread(conversationId);
+            }
+          }
         })
       .on("postgres_changes", {event:"DELETE",schema:"public",table:"messages"},
         () => {
@@ -339,6 +360,7 @@
 
   async function openExistingConversation(conversation) {
     activeConversation = conversation;
+    markRead(conversation.id);
     byId("inboxModal").hidden = true;
     byId("chatTitle").textContent = "แชทกับผู้ใช้";
     byId("chatSubtitle").textContent = "ข้อความส่งถึงผู้ใช้จริงในบัญชีนี้";
@@ -354,6 +376,7 @@
 
   async function openInbox() {
     if (!session?.user) { openAuth(); return; }
+    updateUnreadDot();
     byId("inboxModal").hidden = false;
     byId("inboxList").innerHTML = '<p class="empty-state">กำลังโหลดบทสนทนา...</p>';
     const { data, error } = await client.from("conversations")
