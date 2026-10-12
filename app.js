@@ -19,14 +19,14 @@ function statusName(status){return status==='adopted'?'ได้บ้านแ�
 function filteredAnimals(){const q=$('searchInput').value.trim().toLocaleLowerCase('th');const type=$('typeFilter').value;const status=$('statusFilter').value;return animals.filter(a=>(type==='all'||a.type===type)&&(status==='all'||a.status===status)&&(!q||[a.title,a.province,a.description,typeName(a.type)].join(' ').toLocaleLowerCase('th').includes(q)));}
 function initMap(){if(!window.L){$('map').innerHTML='<div class="empty-state">โหลดแผนที่ไม่สำเร็จ โปรดเชื่อมต่ออินเทอร์เน็ตแล้วรีเฟรชหน้า</div>';return;}map=L.map('map',{minZoom:5,maxZoom:18,maxBounds:[[5.0,97.0],[21.0,106.0]],maxBoundsViscosity:1.0}).setView([15.8700,100.9925],6);L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles &copy; Esri — Sources: Esri, HERE, Garmin, OpenStreetMap contributors'}).addTo(map);markerLayer=L.layerGroup().addTo(map);render();setTimeout(()=>map.invalidateSize(),250);}
 function markerIcon(animal){
-  const fallbackPhotos = {
-    dog: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=120&h=120&q=80',
-    cat: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=120&h=120&q=80'
-  };
-  const photo = animal.image || fallbackPhotos[animal.type] || fallbackPhotos.cat;
+  // Use the exact image attached to this listing. Do not substitute a dog/cat illustration.
+  const photo = String(animal.image || '').trim();
+  const html = photo
+    ? `<div class="animal-photo-pin"><img src="${escapeHtml(photo)}" alt="" onerror="this.onerror=null;this.parentElement.classList.add('animal-photo-missing');this.remove()"></div>`
+    : '<div class="animal-photo-pin animal-photo-missing" aria-label="ประกาศนี้ไม่มีรูปภาพ">🐾</div>';
   return L.divIcon({
     className:'animal-pin-wrap',
-    html:`<div class="animal-photo-pin"><img src="${escapeHtml(photo)}" alt="" onerror="this.onerror=null;this.src='${fallbackPhotos[animal.type] || fallbackPhotos.cat}'"></div>`,
+    html,
     iconSize:[48,54],iconAnchor:[24,51],popupAnchor:[0,-48]
   });
 }
