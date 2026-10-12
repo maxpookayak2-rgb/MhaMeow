@@ -110,3 +110,17 @@ do $$ begin
 exception when duplicate_object then null;
 when undefined_object then null;
 end $$;
+
+
+-- Feature updates: two-party adoption confirmation and owner-only message deletion.
+alter table public.listings
+ add column if not exists adoption_buyer_confirmed boolean not null default false,
+ add column if not exists adoption_owner_confirmed boolean not null default false;
+
+drop policy if exists "senders delete own messages" on public.messages;
+create policy "senders delete own messages" on public.messages
+for delete to authenticated using (
+ sender_id = (select auth.uid()) and
+ exists (select 1 from public.conversations c where c.id = conversation_id
+ and ((select auth.uid()) = c.buyer_id or (select auth.uid()) = c.owner_id))
+);
