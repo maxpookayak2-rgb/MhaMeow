@@ -69,7 +69,11 @@ drop policy if exists "listings readable by everyone" on public.listings;
 drop policy if exists "listings readable: approved or admin" on public.listings;
 create policy "listings readable: approved or admin" on public.listings
 for select to anon, authenticated
-using (approval_status = 'approved' or public.is_admin());
+using (
+  approval_status = 'approved'
+  or public.is_admin()
+  or owner_id = (select auth.uid())
+);
 
 drop policy if exists "authenticated users create own listings" on public.listings;
 create policy "authenticated users create own listings" on public.listings
