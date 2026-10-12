@@ -139,3 +139,19 @@ footer{background:#fffdf8;border-color:#e8e0d3}
 .animal-photo-pin.animal-photo-missing{
   border-radius:50%;background:#e7eadc;
 }
+
+/* Admin listing approval panel */
+.admin-modal{max-width:760px}
+.admin-list{display:flex;flex-direction:column;gap:12px;max-height:62vh;overflow:auto;margin-top:18px}
+.admin-listing{border:1px solid var(--line);border-radius:15px;padding:13px;display:flex;flex-direction:column;gap:12px;background:#fff}
+.admin-listing-main{display:grid;grid-template-columns:100px minmax(0,1fr);gap:13px;align-items:start}
+.admin-listing-main img,.admin-no-image{width:100px;height:100px;border-radius:12px;object-fit:cover;background:var(--mint)}
+.admin-no-image{display:grid;place-items:center;font-size:32px}
+.admin-listing-main strong,.admin-listing-main span{display:block}
+.admin-listing-main strong{font-size:15px}
+.admin-listing-main span,.admin-listing-main small{font-size:11px;color:var(--muted)}
+.admin-listing-main p{font-size:13px;line-height:1.6;margin:7px 0;overflow-wrap:anywhere}
+.admin-listing-actions{display:flex;justify-content:flex-end;gap:8px}
+.admin-reject{color:#a33b36;border-color:#e7c9c6}
+.admin-reject:hover{background:#fff2f0}
+@media(max-width:560px){.admin-listing-main{grid-template-columns:76px minmax(0,1fr)}.admin-listing-main img,.admin-no-image{width:76px;height:76px}.admin-listing-actions button{flex:1}}
