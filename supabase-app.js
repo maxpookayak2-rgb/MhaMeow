@@ -143,16 +143,36 @@
     setAuthMessage("กำลังดำเนินการ...");
     try {
       const result = signupMode
-        ? await client.auth.signUp({ email, password, options: { data: { display_name: displayName } } })
+        ? await client.auth.signUp({
+            email,
+            password,
+            options: {
+              data: { display_name: displayName },
+              // Return email-confirmation links to the deployed GitHub Pages site, not a localhost/preview URL.
+              emailRedirectTo: "https://maxpookayak2-rgb.github.io/MhaMeow/"
+            }
+          })
         : await client.auth.signInWithPassword({ email, password });
-      if (result.error) throw result.error;
-      if (signupMode && !result.data.session) {
-        setAuthMessage("สมัครสำเร็จ โปรดตรวจอีเมลเพื่อยืนยันบัญชี แล้วกลับมาเข้าสู่ระบบ");
+      if (result.error) {
+        const message = String(result.error.message || "");
+        if (!signupMode && /email not confirmed/i.test(message)) {
+          throw new Error("อีเมลนี้ยังไม่ได้ยืนยัน กรุณาเปิดอีเมลและกดลิงก์ยืนยันก่อนเข้าสู่ระบบ");
+        }
+        throw result.error;
+      }
+      if (signupMode) {
+        // Never treat a sign-up as a signed-in session. Confirmation must happen first.
+        session = null;
+        updateAccountUI();
+        if (result.data.session) {
+          await client.auth.signOut();
+        }
+        setAuthMessage("สมัครสมาชิกสำเร็จ! กรุณาเปิดอีเมลที่ใช้สมัคร แล้วกดลิงก์ยืนยันบัญชี ก่อนกลับมาเข้าสู่ระบบ หากไม่พบอีเมลให้ตรวจสอบ Spam/Junk");
       } else {
         session = result.data.session;
         updateAccountUI();
         byId("authModal").hidden = true;
-        say(signupMode ? "สมัครสมาชิกสำเร็จ" : "เข้าสู่ระบบสำเร็จ");
+        say("เข้าสู่ระบบสำเร็จ");
         await refreshListings();
       }
     } catch (error) { setAuthMessage(error.message || "เกิดข้อผิดพลาด"); }
