@@ -8,6 +8,7 @@
   let signupMode = false;
   let activeConversation = null;
   let realtimeChannel = null;
+  let choosingListingLocation = false;
 
   const say = message => typeof showToast === "function" ? showToast(message) : alert(message);
   const byId = id => document.getElementById(id);
@@ -34,6 +35,22 @@
     byId("closeAuth").addEventListener("click", () => byId("authModal").hidden = true);
     openChat = function() { say("แชทจริงต้องตั้งค่า Supabase ก่อน ดูขั้นตอนใน README-SUPABASE.md"); };
     byId("startAdoptionChat").addEventListener("click", event => { event.stopImmediatePropagation(); openChat(); }, true);
+  document.addEventListener("click", event => {
+    const b = event.target.closest("[data-detail]");
+    if (!b) return;
+    setTimeout(() => {
+      const a = animals.find(item => item.id === b.dataset.detail);
+      if (!a) return;
+      selectedId = a.id;
+      const owner = !!session?.user && a.owner_id === session.user.id && !a.demo;
+      byId("deleteListingBtn").hidden = !owner;
+      const buyer = !!session?.user && activeConversation?.listing_id === a.id && activeConversation?.buyer_id === session.user.id;
+      byId("confirmAdoptionBtn").hidden = !(owner || buyer);
+      byId("confirmAdoptionBtn").textContent = owner ? "ยืนยันว่ามอบน้องให้บ้านใหม่แล้ว" : "ยืนยันว่ารับน้องแล้ว";
+      byId("adoptionStatus").hidden = a.demo;
+      byId("adoptionStatus").textContent = "ผู้สนใจ: " + (a.adoption_buyer_confirmed ? "ยืนยันแล้ว" : "รอยืนยัน") + " · ผู้ลงประกาศ: " + (a.adoption_owner_confirmed ? "ยืนยันแล้ว" : "รอยืนยัน");
+    }, 0);
+  }, true);
     document.querySelectorAll("#openPostTop,#openPostHero,#openPostBottom").forEach(button => {
       button.addEventListener("click", event => {
         event.stopImmediatePropagation();
@@ -50,7 +67,7 @@
     id: row.id, owner_id: row.owner_id, title: row.title, type: row.animal_type,
     province: row.province, description: row.description, age: row.age || "ยังไม่ได้ระบุ",
     sex: row.sex || "ยังไม่ได้ระบุ", health: row.health || "ยังไม่ได้ระบุ",
-    lat: row.latitude ?? undefined, lng: row.longitude ?? undefined, status: row.status, image: row.image_url || ""
+    lat: row.latitude ?? undefined, lng: row.longitude ?? undefined, status: row.status, image: row.image_url || "", adoption_buyer_confirmed: !!row.adoption_buyer_confirmed, adoption_owner_confirmed: !!row.adoption_owner_confirmed
   });
   async function refreshListings() {
     const { data, error } = await client.from("listings").select("*").order("created_at", { ascending: false });
@@ -133,7 +150,8 @@
       owner_id: session.user.id, title, animal_type: String(form.get("type")),
       province, description, image_url: String(form.get("image") || "").trim() || null,
       status: String(form.get("status")), age: null, sex: null, health: null,
-      latitude: null, longitude: null
+      latitude: form.get("latitude") ? Number(form.get("latitude")) : null,
+      longitude: form.get("longitude") ? Number(form.get("longitude")) : null
     };
     const submit = event.currentTarget.querySelector('[type="submit"]');
     submit.disabled = true;
@@ -144,10 +162,65 @@
     await refreshListings();
     const saved = toAnimal(data);
     selectedId = saved.id;
-    if (map) map.setView([15.8700,100.9925],6);
-    say("เผยแพร่ประกาศออนไลน์แล้ว");
+    if (map && Number.isFinite(saved.lat) && Number.isFinite(saved.lng)) map.setView([saved.lat,saved.lng],13);
+    say(saved.lat != null && saved.lng != null ? "เผยแพร่ประกาศพร้อมตำแหน่งบนแผนที่แล้ว" : "เผยแพร่ประกาศแล้ว แต่ยังไม่มีหมุดบนแผนที่");
     byId("explore").scrollIntoView({behavior:"smooth"});
   }, true);
+
+
+  // Choose an exact map point for a listing; no location is collected without a click.
+  byId("chooseListingLocation").addEventListener("click", () => {
+    choosingListingLocation = true;
+    byId("postModal").hidden = true;
+    document.body.style.overflow = "";
+    byId("explore").scrollIntoView({behavior:"smooth"});
+    say("คลิกบนแผนที่เพื่อปักหมุดตำแหน่งน้อง");
+    document.body.classList.add("location-picking");
+  });
+  if (map) map.on("click", event => {
+    if (!choosingListingLocation) return;
+    byId("listingLatitude").value = event.latlng.lat.toFixed(6);
+    byId("listingLongitude").value = event.latlng.lng.toFixed(6);
+    choosingListingLocation = false;
+    document.body.classList.remove("location-picking");
+    byId("postModal").hidden = false;
+    document.body.style.overflow = "hidden";
+    say("เลือกตำแหน่งแล้ว กดบันทึกประกาศเพื่อยืนยัน");
+  });
+  // Owner can remove their own listing from the shared map.
+  byId("deleteListingBtn").addEventListener("click", async () => {
+    const a = animals.find(item => item.id === selectedId);
+    if (!a || a.demo || a.owner_id !== session?.user?.id) return say("ลบได้เฉพาะประกาศของบัญชีคุณ");
+    if (!confirm("ต้องการลบประกาศนี้ออกจากแผนที่ใช่ไหม?")) return;
+    const {error} = await client.from("listings").delete().eq("id", a.id).eq("owner_id", session.user.id);
+    if (error) return say("ลบประกาศไม่สำเร็จ: " + error.message);
+    byId("detailModal").hidden = true;
+    await refreshListings();
+    say("ลบประกาศออกจากแผนที่แล้ว");
+  });
+  byId("confirmAdoptionBtn").addEventListener("click", async () => {
+    const a = animals.find(item => item.id === selectedId);
+    if (!a || a.demo || !session?.user) return say("ต้องเข้าสู่ระบบและเลือกประกาศออนไลน์ก่อน");
+    const isOwner = a.owner_id === session.user.id;
+    const isBuyer = activeConversation?.listing_id === a.id && activeConversation?.buyer_id === session.user.id;
+    if (!isOwner && !isBuyer) return say("ผู้ยืนยันต้องเป็นผู้ลงประกาศหรือผู้สนใจที่เริ่มแชทกับประกาศนี้");
+    const field = isOwner ? "adoption_owner_confirmed" : "adoption_buyer_confirmed";
+    const {error} = await client.from("listings").update({[field]: true}).eq("id",a.id);
+    if (error) return say("บันทึกการยืนยันไม่สำเร็จ โปรดรัน SQL อัปเดตใน supabase-schema.sql แล้วลองอีกครั้ง");
+    await refreshListings();
+    const updated = animals.find(item=>item.id===a.id);
+    byId("adoptionStatus").hidden = false;
+    byId("adoptionStatus").textContent = "ผู้สนใจ: " + (updated?.adoption_buyer_confirmed ? "ยืนยันแล้ว" : "รอยืนยัน") + " · ผู้ลงประกาศ: " + (updated?.adoption_owner_confirmed ? "ยืนยันแล้ว" : "รอยืนยัน");
+    say("บันทึกการยืนยันของคุณแล้ว");
+  });
+  // Message author may delete their own message.
+  async function deleteOwnMessage(messageId) {
+    if (!session?.user || !activeConversation) return;
+    if (!confirm("ต้องการลบข้อความนี้ใช่ไหม?")) return;
+    const {error} = await client.from("messages").delete().eq("id",messageId).eq("sender_id",session.user.id);
+    if (error) return say("ลบข้อความไม่ได้ โปรดรัน SQL อัปเดตใน supabase-schema.sql: " + error.message);
+    await loadMessages(activeConversation.id);
+  }
 
   // Chat is a real user-to-user conversation, not the former simulated AI.
   function addRealMessage(message, who, senderLabel) {
@@ -162,9 +235,17 @@
       .eq("conversation_id", conversationId).order("created_at", {ascending:true});
     if (error) { say("โหลดข้อความไม่ได้: " + error.message); return; }
     byId("chatMessages").innerHTML = "";
-    (data || []).forEach(message => addRealMessage(message.body,
-      message.sender_id === session.user.id ? "user" : "bot",
-      message.sender_id === session.user.id ? "" : "ผู้สนทนา"));
+    (data || []).forEach(message => {
+      addRealMessage(message.body, message.sender_id === session.user.id ? "user" : "bot",
+        message.sender_id === session.user.id ? "" : "ผู้สนทนา");
+      const row = byId("chatMessages").lastElementChild;
+      if (message.sender_id === session.user.id) {
+        const remove = document.createElement("button");
+        remove.type = "button"; remove.className = "message-delete"; remove.textContent = "ลบข้อความ";
+        remove.addEventListener("click", () => deleteOwnMessage(message.id));
+        row.appendChild(remove);
+      }
+    });
   }
   function subscribeMessages(conversationId) {
     if (realtimeChannel) client.removeChannel(realtimeChannel);
