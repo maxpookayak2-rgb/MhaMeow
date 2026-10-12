@@ -155,3 +155,8 @@ footer{background:#fffdf8;border-color:#e8e0d3}
 .admin-reject{color:#a33b36;border-color:#e7c9c6}
 .admin-reject:hover{background:#fff2f0}
 @media(max-width:560px){.admin-listing-main{grid-template-columns:76px minmax(0,1fr)}.admin-listing-main img,.admin-no-image{width:76px;height:76px}.admin-listing-actions button{flex:1}}
+
+/* Local listing image picker */
+.field-hint{display:block;color:var(--muted);font-size:12px;margin-top:5px;line-height:1.5}
+.listing-image-preview{display:flex;align-items:center;gap:12px;margin:4px 0 14px;padding:10px;border:1px solid var(--line);border-radius:14px}
+.listing-image-preview img{width:96px;height:96px;object-fit:cover;border-radius:10px;background:var(--mint)}
