@@ -96,3 +96,25 @@ footer{background:#fffdf8;border-color:#e8e0d3}
  .hero-art{border-radius:42% 58% 44% 56%/54% 45% 55% 46%}
  .callout{background:#e7eadc}
 }
+
+
+/* Photo-based pet pins on the map */
+.animal-pin-wrap{
+  background:transparent!important;
+  border:0!important;
+}
+.animal-photo-pin{
+  width:46px;height:46px;position:relative;
+  border:3px solid #fffdf8;border-radius:50% 50% 50% 8px;
+  overflow:hidden;transform:rotate(-45deg);
+  box-shadow:0 3px 12px #20251e55;
+  background:#e7eadc;
+}
+.animal-photo-pin:after{
+  content:"";position:absolute;inset:0;border:1px solid #314a3530;
+  border-radius:inherit;pointer-events:none;
+}
+.animal-photo-pin img{
+  display:block;width:100%;height:100%;object-fit:cover;
+  transform:rotate(45deg) scale(1.42);
+}
