@@ -147,7 +147,6 @@
             email,
             password,
             options: {
-              data: { display_name: displayName },
               data: { display_name: displayName }
             }
           })
