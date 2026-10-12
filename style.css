@@ -160,3 +160,23 @@ footer{background:#fffdf8;border-color:#e8e0d3}
 .field-hint{display:block;color:var(--muted);font-size:12px;margin-top:5px;line-height:1.5}
 .listing-image-preview{display:flex;align-items:center;gap:12px;margin:4px 0 14px;padding:10px;border:1px solid var(--line);border-radius:14px}
 .listing-image-preview img{width:96px;height:96px;object-fit:cover;border-radius:10px;background:var(--mint)}
+
+
+/* UX refinement: restrained, text-first visual system */
+:root{--ink:#252b27;--muted:#6b716c;--green:#45624c;--green-dark:#344b39;--mint:#f1f3ef;--cream:#fafaf8;--line:#e6e8e4;--orange:#d9b27b;--shadow:0 8px 24px rgba(25,35,27,.06)}
+body{font-family:Arial,"Noto Sans Thai",Tahoma,sans-serif;font-size:15px;line-height:1.6;color:var(--ink)}
+.topbar{height:auto;min-height:72px;padding:14px max(5vw,24px)}
+.brand{gap:0;font-size:18px;letter-spacing:0}
+.brand small{font-size:11px;letter-spacing:0}
+.topbar nav{gap:20px}
+.primary,.secondary{border-radius:7px;box-shadow:none;transition:background-color .15s ease,border-color .15s ease}
+.primary:hover,.secondary:hover{transform:none;box-shadow:none}
+.hero{background:#fafaf8}
+.hero h1{letter-spacing:-.4px}
+.hero-art{background:#f0f2ed;border-radius:8px}
+.animal-card,.results,.modal,.chat-modal,.callout,.steps article,.inbox-item,.admin-listing{border-radius:8px;box-shadow:none}
+.animal-card{border:1px solid var(--line)}
+.tag,.live-pill{border-radius:4px}
+input,select,textarea{border-radius:6px}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #45624c;outline-offset:2px}
+@media(max-width:760px){.topbar{align-items:flex-start;gap:12px;flex-direction:column}.topbar nav{width:100%;gap:10px;flex-wrap:wrap}.hero{padding-top:42px;padding-bottom:36px}.hero-art{min-height:220px}}
