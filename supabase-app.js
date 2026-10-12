@@ -240,10 +240,11 @@
   // Message author may delete their own message.
   async function deleteOwnMessage(messageId) {
     if (!session?.user || !activeConversation) return;
-    if (!confirm("ต้องการลบข้อความนี้ใช่ไหม?")) return;
+    if (!confirm("ต้องการยกเลิกข้อความนี้สำหรับทุกคนใช่ไหม? ข้อความจะถูกลบออกจากบทสนทนาทั้งสองฝ่าย")) return;
     const {error} = await client.from("messages").delete().eq("id",messageId).eq("sender_id",session.user.id);
     if (error) return say("ลบข้อความไม่ได้ โปรดรัน SQL อัปเดตใน supabase-schema.sql: " + error.message);
     await loadMessages(activeConversation.id);
+    say("ยกเลิกข้อความสำหรับทุกคนแล้ว");
   }
 
   // Chat is a real user-to-user conversation, not the former simulated AI.
@@ -265,7 +266,7 @@
       const row = byId("chatMessages").lastElementChild;
       if (message.sender_id === session.user.id) {
         const remove = document.createElement("button");
-        remove.type = "button"; remove.className = "message-delete"; remove.textContent = "ลบข้อความ";
+        remove.type = "button"; remove.className = "message-delete"; remove.textContent = "ยกเลิกข้อความ";
         remove.addEventListener("click", () => deleteOwnMessage(message.id));
         row.appendChild(remove);
       }
@@ -277,7 +278,11 @@
       .on("postgres_changes", {event:"INSERT",schema:"public",table:"messages",filter:"conversation_id=eq."+conversationId},
         payload => {
           const m = payload.new;
-          if (m.sender_id !== session?.user?.id) addRealMessage(m.body, "bot", "ผู้สนทนา");
+          if (m.sender_id !== session?.user?.id) loadMessages(conversationId);
+        })
+      .on("postgres_changes", {event:"DELETE",schema:"public",table:"messages"},
+        () => {
+          if (activeConversation?.id === conversationId) loadMessages(conversationId);
         }).subscribe();
   }
   openChat = async function() {
