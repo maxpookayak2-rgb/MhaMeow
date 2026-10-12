@@ -180,3 +180,48 @@ body{font-family:Arial,"Noto Sans Thai",Tahoma,sans-serif;font-size:15px;line-he
 input,select,textarea{border-radius:6px}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #45624c;outline-offset:2px}
 @media(max-width:760px){.topbar{align-items:flex-start;gap:12px;flex-direction:column}.topbar nav{width:100%;gap:10px;flex-wrap:wrap}.hero{padding-top:42px;padding-bottom:36px}.hero-art{min-height:220px}}
+
+
+/* Minimal homepage refinement inspired by clean editorial e-commerce layouts */
+.hero{
+  background:#fafaf8;
+  grid-template-columns:1.05fr .95fr;
+  gap:clamp(28px,5vw,76px);
+  padding-top:64px;
+  padding-bottom:64px;
+  min-height:480px;
+}
+.hero-copy{max-width:620px}
+.hero .eyebrow{color:#647b69;font-weight:400;letter-spacing:.4px;font-size:13px}
+.hero h1{font-size:clamp(34px,4.1vw,56px);line-height:1.28;font-weight:600;letter-spacing:-1.1px;margin:16px 0 18px}
+.hero-pet-emoji{white-space:nowrap;font-size:.72em;letter-spacing:0;vertical-align:baseline}
+.hero-copy>p{font-size:15px;line-height:1.9;max-width:500px;color:#6b716c}
+.hero-actions{gap:10px;margin-top:24px}
+.hero .note{font-size:11px;color:#898e88;margin-top:17px}
+.hero-art{
+  min-height:330px;height:clamp(300px,32vw,410px);
+  width:100%;max-width:none;position:relative;
+  border-radius:48% 52% 42% 58%/55% 42% 58% 45%;
+  background:#eef0e8;
+}
+.hero-art .pet-emoji{font-size:clamp(100px,12vw,160px);filter:none}
+.hero-art .pet-emoji span{font-size:.65em}
+.hero-art .art-label{left:50%;bottom:20px;transform:translateX(-50%);white-space:nowrap;background:#fffdf8;color:#47634b;padding:12px 18px;border-radius:5px 14px 14px 14px;box-shadow:none}
+.stats{padding:32px max(7vw,28px);justify-content:space-around;gap:25px}
+.stats div{min-width:0}
+.stats strong{font-size:25px}
+.section{padding-top:66px;padding-bottom:66px}
+.section-heading h2{font-size:30px}
+@media(max-width:850px){
+ .hero{grid-template-columns:1fr .8fr;padding:48px 28px;gap:22px}
+ .hero h1{font-size:clamp(30px,4vw,42px)}
+}
+@media(max-width:600px){
+ .hero{grid-template-columns:1fr;padding:38px 22px 30px}
+ .hero h1{font-size:34px}
+ .hero-pet-emoji{font-size:.68em}
+ .hero-art{height:220px;min-height:220px;width:100%}
+ .stats{padding:18px 8px;gap:8px}
+ .stats strong{font-size:16px}
+ .section{padding-top:45px;padding-bottom:45px}
+}
