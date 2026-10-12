@@ -168,6 +168,24 @@
   }, true);
 
 
+  // Extend the existing detail modal for owner actions, including map-popup entry points.
+  const originalOpenDetail = window.openDetail;
+  if (typeof originalOpenDetail === "function") {
+    window.openDetail = function(id) {
+      originalOpenDetail(id);
+      selectedId = id;
+      const a = animals.find(item => item.id === id);
+      if (!a) return;
+      const owner = !!session?.user && a.owner_id === session.user.id && !a.demo;
+      const buyer = !!session?.user && activeConversation?.listing_id === a.id && activeConversation?.buyer_id === session.user.id;
+      byId("deleteListingBtn").hidden = !owner;
+      byId("confirmAdoptionBtn").hidden = !(owner || buyer);
+      byId("confirmAdoptionBtn").textContent = owner ? "ยืนยันว่ามอบน้องให้บ้านใหม่แล้ว" : "ยืนยันว่ารับน้องแล้ว";
+      byId("adoptionStatus").hidden = !!a.demo;
+      byId("adoptionStatus").textContent = "ผู้สนใจ: " + (a.adoption_buyer_confirmed ? "ยืนยันแล้ว" : "รอยืนยัน") + " · ผู้ลงประกาศ: " + (a.adoption_owner_confirmed ? "ยืนยันแล้ว" : "รอยืนยัน");
+    };
+  }
+
   // Choose an exact map point for a listing; no location is collected without a click.
   byId("chooseListingLocation").addEventListener("click", () => {
     choosingListingLocation = true;
