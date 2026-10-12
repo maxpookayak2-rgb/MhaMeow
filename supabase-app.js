@@ -521,13 +521,13 @@
       return;
     }
     if (!data?.length) {
-      byId("adminListingList").innerHTML = '<p class="empty-state">🎉 ไม่มีประกาศที่รออนุมัติในขณะนี้</p>';
+      byId("adminListingList").innerHTML = '<p class="empty-state"> ไม่มีประกาศที่รออนุมัติในขณะนี้</p>';
       return;
     }
     byId("adminListingList").innerHTML = data.map(row => {
       const animal = toAnimal(row);
       return '<article class="admin-listing"><div class="admin-listing-main">' +
-        (animal.image ? '<img src="' + escapeHtml(animal.image) + '" alt="รูป ' + escapeHtml(animal.title) + '">' : '<div class="admin-no-image">🐾</div>') +
+        (animal.image ? '<img src="' + escapeHtml(animal.image) + '" alt="รูป ' + escapeHtml(animal.title) + '">' : '<div class="admin-no-image"></div>') +
         '<div><strong>' + escapeHtml(animal.title) + '</strong><span>' + escapeHtml(animal.type === "dog" ? "สุนัข" : "แมว") + ' · ' + escapeHtml(animal.province) + '</span>' +
         '<p>' + escapeHtml(animal.description) + '</p><small>อายุ: ' + escapeHtml(animal.age) + ' · เพศ: ' + escapeHtml(animal.sex) + '</small></div></div>' +
         '<div class="admin-listing-actions"><button type="button" class="primary small" data-admin-action="approved" data-listing-id="' + escapeHtml(row.id) + '">✓ อนุมัติ</button>' +
