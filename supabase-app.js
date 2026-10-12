@@ -149,7 +149,7 @@
     const payload = {
       owner_id: session.user.id, title, animal_type: String(form.get("type")),
       province, description, image_url: String(form.get("image") || "").trim() || null,
-      status: String(form.get("status")), age: null, sex: null, health: null,
+      status: String(form.get("status")), age: String(form.get("age") || "").trim() || null, sex: String(form.get("sex") || "").trim() || null, health: String(form.get("health") || "").trim() || null,
       latitude: form.get("latitude") ? Number(form.get("latitude")) : null,
       longitude: form.get("longitude") ? Number(form.get("longitude")) : null
     };
@@ -212,7 +212,9 @@
     if (!confirm("ต้องการลบประกาศนี้ออกจากแผนที่ใช่ไหม?")) return;
     const {error} = await client.from("listings").delete().eq("id", a.id).eq("owner_id", session.user.id);
     if (error) return say("ลบประกาศไม่สำเร็จ: " + error.message);
-    byId("detailModal").hidden = true;
+    if (typeof closeDetail === "function") closeDetail(); else { byId("detailModal").hidden = true; document.body.style.overflow = ""; }
+    document.body.classList.remove("location-picking");
+    document.body.style.overflow = "";
     await refreshListings();
     say("ลบประกาศออกจากแผนที่แล้ว");
   });
