@@ -31,3 +31,68 @@ html,body{overscroll-behavior-y:auto}body.modal-open{overflow:hidden}.modal-back
 .inbox-button{position:relative;display:inline-flex;align-items:center;gap:8px}
 .unread-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#e53935;box-shadow:0 0 0 2px #fff;flex:none}
 .unread-dot[hidden]{display:none!important}
+
+
+/* บ้านอุ่นใจ — warmer, less template-like visual identity */
+:root{
+ --ink:#292f2a;--muted:#74766d;--green:#47634b;--green-dark:#314a35;
+ --mint:#e7eadc;--cream:#f4efe5;--line:#e4ddcf;--orange:#c8754b;
+ --shadow:0 12px 30px #392d1d12;
+}
+body{background:#fffdf8;color:var(--ink)}
+.topbar{background:#fffdf8;border-bottom:1px solid #e8e0d3}
+.brand{letter-spacing:-.4px}
+.brand-icon{background:#e8eadb;border-radius:50% 50% 44% 50%;transform:rotate(-7deg)}
+.primary{background:#47634b;box-shadow:none;border-radius:8px 8px 8px 2px}
+.primary:hover{background:#314a35;transform:translateY(-1px)}
+.secondary{border-radius:8px 8px 2px 8px;border-color:#d8d8c9;color:#405b43}
+.hero{background:#f4efe5;position:relative;overflow:hidden;min-height:440px}
+.hero:after{content:"";position:absolute;left:-75px;bottom:-125px;width:250px;height:250px;border:1px solid #d9d0bf;border-radius:50%;pointer-events:none}
+.eyebrow{color:#a45f40;letter-spacing:.6px;font-size:11px}
+.hero h1{letter-spacing:-1.4px;font-weight:600}
+.hero-copy>p{color:#686c61}
+.hero-art{background:#dfe5d3;border-radius:48% 52% 42% 58%/55% 42% 58% 45%;max-width:400px}
+.sun{background:#e9b985;opacity:.95}
+.art-label{border-radius:3px 12px 12px 12px;box-shadow:0 7px 18px #51402b14}
+.stats{background:#fffdf8;border-bottom:1px solid #e8e0d3}
+.stats strong{color:#a45f40}
+.section-heading h2,.callout h2{letter-spacing:-.8px;font-weight:600}
+.live-pill{background:#f1e7d8;color:#8d573c;border-radius:5px}
+.live-pill i{background:#b56f4d}
+.searchbox,.filters select{border-radius:8px;border-color:#e1dbcf;background:#fffdf9}
+#map{border-radius:4px 18px 18px 18px;border-color:#e0d9cc}
+.results{border-radius:18px 4px 18px 18px;border-color:#e0d9cc;background:#fffdf9}
+.results-title{background:#f7f2e8}
+.animal-list{gap:5px}
+.animal-card{border-radius:8px 14px 14px 8px;padding:10px}
+.animal-card:hover,.animal-card.selected{border-color:#e3c8b6;background:#fbf3eb}
+.animal-card img{border-radius:8px 8px 8px 2px}
+.tag{background:#e8eddf;color:#47634b;border-radius:4px 9px 9px 9px}
+.tag.adopted{background:#f4e3d6;color:#965b3d}
+.map-note{color:#898276}
+.how{background:#f8f4ec}
+.steps article{border:0;border-top:2px solid #d8b39b;border-radius:2px 2px 14px 14px;background:#fffdf8;padding:24px}
+.steps article>span{color:#b26c4b}
+.callout{background:#e7eadc;border-radius:4px 20px 20px 20px}
+footer{background:#fffdf8;border-color:#e8e0d3}
+.modal-backdrop{background:#252b25b8;backdrop-filter:blur(3px)}
+.modal,.chat-modal{border-radius:18px 18px 18px 4px}
+.modal{background:#fffdf8}
+.modal input,.modal select,.modal textarea{border-radius:7px;border-color:#e0d9cd;background:#fffefb}
+.close{border-radius:50% 50% 50% 4px;background:#eee9de}
+.chat-header{background:#fffdf8}
+.chat-avatar{background:#e8eadb;border-radius:50% 50% 50% 8px}
+.chat-messages{background:#f8f4ec}
+.chat-message.bot .chat-bubble{background:#e8eadf;border-radius:14px 14px 14px 3px}
+.chat-message.user .chat-bubble{background:#47634b;border-radius:14px 14px 3px 14px}
+.chat-suggestions button{border-radius:6px 12px 12px 12px;border-color:#ddd6c8;color:#47634b}
+.inbox-item{border-radius:6px 14px 14px 14px;background:#fffdf8}
+.inbox-item:hover{background:#f7f0e5;border-color:#d9b49d}
+.location-picker{background:#f8f4ec;border-color:#e4ddcf;border-radius:6px 14px 14px 14px}
+.adoption-status{background:#edf0e5}
+@media(max-width:600px){
+ .hero{background:#f4efe5}
+ .hero h1{letter-spacing:-.8px}
+ .hero-art{border-radius:42% 58% 44% 56%/54% 45% 55% 46%}
+ .callout{background:#e7eadc}
+}
