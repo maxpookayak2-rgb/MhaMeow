@@ -148,8 +148,7 @@
             password,
             options: {
               data: { display_name: displayName },
-              // Return email-confirmation links to the deployed GitHub Pages site, not a localhost/preview URL.
-              emailRedirectTo: "https://maxpookayak2-rgb.github.io/MhaMeow/"
+              data: { display_name: displayName }
             }
           })
         : await client.auth.signInWithPassword({ email, password });
@@ -161,13 +160,17 @@
         throw result.error;
       }
       if (signupMode) {
-        // Never treat a sign-up as a signed-in session. Confirmation must happen first.
-        session = null;
-        updateAccountUI();
-        if (result.data.session) {
-          await client.auth.signOut();
+        // Beta mode expects Supabase Confirm email to be disabled, so sign-up returns a session.
+        session = result.data.session;
+        if (!session) {
+          setAuthMessage("บัญชีถูกสร้างแล้ว แต่ยังไม่ได้เข้าสู่ระบบ กรุณาปิด Confirm email ใน Supabase: Authentication → Sign In / Providers → Email แล้วลองเข้าสู่ระบบ");
+          return;
         }
-        setAuthMessage("สมัครสมาชิกสำเร็จ! กรุณาเปิดอีเมลที่ใช้สมัคร แล้วกดลิงก์ยืนยันบัญชี ก่อนกลับมาเข้าสู่ระบบ หากไม่พบอีเมลให้ตรวจสอบ Spam/Junk");
+        updateAccountUI();
+        subscribeInboxNotifications();
+        byId("authModal").hidden = true;
+        say("สมัครสมาชิกและเข้าสู่ระบบสำเร็จ");
+        await refreshListings();
       } else {
         session = result.data.session;
         updateAccountUI();
