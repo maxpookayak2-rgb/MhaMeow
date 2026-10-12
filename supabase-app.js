@@ -223,7 +223,11 @@
     const isBuyer = activeConversation?.listing_id === a.id && activeConversation?.buyer_id === session.user.id;
     if (!isOwner && !isBuyer) return say("ผู้ยืนยันต้องเป็นผู้ลงประกาศหรือผู้สนใจที่เริ่มแชทกับประกาศนี้");
     const field = isOwner ? "adoption_owner_confirmed" : "adoption_buyer_confirmed";
-    const {error} = await client.from("listings").update({[field]: true}).eq("id",a.id);
+    const nextBuyer = isOwner ? !!a.adoption_buyer_confirmed : true;
+    const nextOwner = isOwner ? true : !!a.adoption_owner_confirmed;
+    const patch = {[field]: true};
+    if (nextBuyer && nextOwner) patch.status = "adopted";
+    const {error} = await client.from("listings").update(patch).eq("id",a.id);
     if (error) return say("บันทึกการยืนยันไม่สำเร็จ โปรดรัน SQL อัปเดตใน supabase-schema.sql แล้วลองอีกครั้ง");
     await refreshListings();
     const updated = animals.find(item=>item.id===a.id);
